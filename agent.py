@@ -502,10 +502,12 @@ async def entrypoint(ctx: JobContext):
             _ca_model   = live_config.get("cartesia_model", "sonic-2")
             _ca_lang    = live_config.get("cartesia_language", "en")
             _ca_api_key = live_config.get("cartesia_api_key") or os.environ.get("CARTESIA_API_KEY")
+            _ca_speed   = live_config.get("cartesia_speed", 0.8)
             tts_kwargs  = dict(
                 model=_ca_model,
                 voice=_ca_voice,
                 language=_ca_lang,
+                speed=_ca_speed,
                 api_version="2025-04-16",
                 word_timestamps=False,
             )
