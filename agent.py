@@ -495,6 +495,21 @@ async def entrypoint(ctx: JobContext):
         _openai_voice = live_config.get("openai_tts_voice", "nova")
         agent_tts = openai.TTS(voice=_openai_voice)
         logger.info(f"[TTS] Using OpenAI TTS — voice: {_openai_voice}")
+    elif tts_provider == "cartesia":
+        try:
+            from livekit.plugins import cartesia
+            _ca_voice   = live_config.get("cartesia_voice_id", "f8f5f1b2-f02d-4d8e-a40d-fd850a487b3d")
+            _ca_model   = live_config.get("cartesia_model", "sonic-2")
+            _ca_lang    = live_config.get("cartesia_language", "en")
+            _ca_api_key = live_config.get("cartesia_api_key") or os.environ.get("CARTESIA_API_KEY")
+            tts_kwargs  = dict(model=_ca_model, voice=_ca_voice, language=_ca_lang)
+            if _ca_api_key:
+                tts_kwargs["api_key"] = _ca_api_key
+            agent_tts = cartesia.TTS(**tts_kwargs)
+            logger.info(f"[TTS] Using Cartesia {_ca_model} — voice: {_ca_voice} lang: {_ca_lang}")
+        except (ImportError, ValueError, Exception) as e:
+            logger.warning(f"[TTS] Cartesia unavailable ({e}) — falling back to OpenAI TTS")
+            agent_tts = openai.TTS(voice="nova")
     else:
         agent_tts = sarvam.TTS(
             target_language_code=tts_language,
