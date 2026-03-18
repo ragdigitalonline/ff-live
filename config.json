@@ -10,7 +10,7 @@
     "cartesia_voice_id": "95d51f79-c397-46f9-b49a-23763d3eaa2d",
     "cartesia_model": "sonic-3",
     "cartesia_language": "en",
-    "cartesia_speed": 0.75,
+    "cartesia_speed": 0.9,
     "cartesia_api_key": "",
     "stt_provider": "deepgram",
     "elevenlabs_voice_id": "21m00Tcm4TlvDq8ikWAM",
