@@ -389,6 +389,153 @@ async def get_demo_page():
     """Browser-based demo call page using LiveKit JS SDK."""
     return HTMLResponse(content=DEMO_PAGE_HTML)
 
+# ── Demo 2: Frogman Scuba (Hasni) ─────────────────────────────────────────────
+DEMO2_PAGE_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Voice Demo — Frogman Scuba</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',sans-serif;background:#0d1b2a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:24px;padding:24px}
+    .card{background:#162032;border:1px solid #1e3a52;border-radius:20px;padding:40px;max-width:440px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,0.4)}
+    h1{font-size:22px;font-weight:700;margin-bottom:6px}
+    .sub{color:#8892a4;font-size:13px;margin-bottom:28px}
+    .avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 24px}
+    .btn{width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:none;transition:all 0.2s}
+    .btn-start{background:#0ea5e9;color:#fff}
+    .btn-start:hover{background:#0284c7;box-shadow:0 0 24px rgba(14,165,233,0.4)}
+    .btn-end{background:#ef4444;color:#fff;display:none}
+    .btn-end:hover{background:#dc2626}
+    #status{font-size:13px;color:#8892a4;margin-top:16px;min-height:20px}
+    .pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:6px;animation:pulse 1.5s infinite}
+    @keyframes pulse{0%,100%{box-shadow:0 0 4px #22c55e}50%{box-shadow:0 0 12px #22c55e}}
+    .vol-bar{display:flex;gap:3px;align-items:flex-end;justify-content:center;height:32px;margin-top:12px;display:none}
+    .vol-bar span{width:4px;background:#0ea5e9;border-radius:2px;transition:height 0.1s}
+    .powered{font-size:11px;color:#4a5568;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="avatar">🤿</div>
+    <h1>Talk to Hasni</h1>
+    <div class="sub">AI Dive Advisor · Frogman Scuba, Goa</div>
+    <button class="btn btn-start" id="startBtn" onclick="startCall()">📞 Start Demo Call</button>
+    <button class="btn btn-end" id="endBtn" onclick="endCall()">📵 End Call</button>
+    <div id="status">Click to start a live voice demo</div>
+    <div class="vol-bar" id="volBar">
+      <span id="b1" style="height:8px"></span><span id="b2" style="height:14px"></span>
+      <span id="b3" style="height:20px"></span><span id="b4" style="height:14px"></span>
+      <span id="b5" style="height:8px"></span>
+    </div>
+    <div class="powered">Powered by frogman.in</div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+  <script>
+    let room;
+    function attachAudioTrack(track) {
+      if (track.kind === LivekitClient.Track.Kind.Audio) {
+        const audioEl = track.attach();
+        audioEl.id = 'agent-audio-' + Math.random().toString(36).slice(2);
+        audioEl.setAttribute('autoplay', '');
+        audioEl.volume = 1.0;
+        document.body.appendChild(audioEl);
+      }
+    }
+    async function startCall() {
+      document.getElementById('status').textContent = 'Connecting...';
+      document.getElementById('startBtn').disabled = true;
+      try {
+        const res = await fetch('/api/demo2-token').then(r => r.json());
+        if (res.error) throw new Error(res.error);
+        room = new LivekitClient.Room();
+        room.on(LivekitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
+          attachAudioTrack(track);
+        });
+        await room.connect(res.url, res.token, {autoSubscribe: true});
+        room.remoteParticipants.forEach((participant) => {
+          participant.audioTrackPublications.forEach((pub) => {
+            if (pub.track) attachAudioTrack(pub.track);
+          });
+        });
+        await room.localParticipant.setMicrophoneEnabled(true);
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('endBtn').style.display = 'block';
+        document.getElementById('volBar').style.display = 'flex';
+        setStatus('<span class="pulse"></span>Connected — speak now!');
+        animateBars();
+      } catch(e) {
+        setStatus('❌ ' + e.message);
+        document.getElementById('startBtn').disabled = false;
+      }
+    }
+    async function endCall() {
+      if (room) { await room.disconnect(); room = null; }
+      document.querySelectorAll('[id^="agent-audio-"]').forEach(el => el.remove());
+      document.getElementById('startBtn').style.display = 'block';
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('endBtn').style.display = 'none';
+      document.getElementById('volBar').style.display = 'none';
+      setStatus('Call ended. Click to start again.');
+    }
+    function setStatus(html) { document.getElementById('status').innerHTML = html; }
+    function animateBars() {
+      if (!room) return;
+      ['b1','b2','b3','b4','b5'].forEach(id => {
+        document.getElementById(id).style.height = (4 + Math.random()*24) + 'px';
+      });
+      setTimeout(animateBars, 150);
+    }
+  </script>
+</body>
+</html>"""
+
+@app.get("/api/demo2-token")
+async def api_demo2_token():
+    """Generate a LiveKit token for Frogman Scuba (Hasni) demo."""
+    config = read_config()
+    try:
+        from livekit.api import AccessToken, VideoGrants
+        import time, random
+        room_name = f"demo2-{random.randint(10000,99999)}"
+        api_key     = config.get("livekit_api_key") or os.environ.get("LIVEKIT_API_KEY","")
+        api_secret  = config.get("livekit_api_secret") or os.environ.get("LIVEKIT_API_SECRET","")
+        livekit_url = config.get("livekit_url") or os.environ.get("LIVEKIT_URL","")
+
+        token = AccessToken(api_key, api_secret) \
+            .with_identity("demo-user") \
+            .with_name("Demo Caller") \
+            .with_grants(VideoGrants(room_join=True, room=room_name)) \
+            .with_ttl(timedelta(hours=1)) \
+            .to_jwt()
+
+        import json as _json
+        from livekit import api as lkapi
+        lk = lkapi.LiveKitAPI(url=livekit_url, api_key=api_key, api_secret=api_secret)
+        await lk.agent_dispatch.create_dispatch(
+            lkapi.CreateAgentDispatchRequest(
+                agent_name="outbound-caller",
+                room=room_name,
+                metadata=_json.dumps({
+                    "phone_number": "demo2",
+                    "is_demo": True,
+                    "config_file": "configs/frogman.json"
+                }),
+            )
+        )
+        await lk.aclose()
+        return {"token": token, "room": room_name, "url": livekit_url}
+    except Exception as e:
+        logger.error(f"Demo2 token error: {e}")
+        return {"error": str(e)}
+
+@app.get("/demo2", response_class=HTMLResponse)
+async def get_demo2_page():
+    """Frogman Scuba (Hasni) demo page."""
+    return HTMLResponse(content=DEMO2_PAGE_HTML)
+
 
 # ── Prometheus Metrics (#40) ──────────────────────────────────────────────────
 try:

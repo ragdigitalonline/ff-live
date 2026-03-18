@@ -343,10 +343,12 @@ async def entrypoint(ctx: JobContext):
 
     # Try metadata first (outbound dispatch)
     metadata = ctx.job.metadata or ""
+    config_file_override = None
     if metadata:
         try:
             meta = json.loads(metadata)
             phone_number = meta.get("phone_number")
+            config_file_override = meta.get("config_file")  # e.g. "configs/frogman.json"
         except Exception:
             pass
 
@@ -373,7 +375,12 @@ async def entrypoint(ctx: JobContext):
         return
 
     # ── Load config ───────────────────────────────────────────────────────
-    live_config   = get_live_config(caller_phone)
+    if config_file_override and os.path.exists(config_file_override):
+        with open(config_file_override, "r") as _f:
+            live_config = json.load(_f)
+        logger.info(f"[CONFIG] Loaded override: {config_file_override}")
+    else:
+        live_config = get_live_config(caller_phone)
     delay_setting = live_config.get("stt_min_endpointing_delay", 0.05)
     llm_model     = live_config.get("llm_model", "gpt-4o-mini")
     llm_provider  = live_config.get("llm_provider", "openai")

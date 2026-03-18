@@ -19,5 +19,5 @@ __pycache__/
 *.log
 ui_server.log
 
-# Configs with secrets
-configs/
+# Configs with secrets (per-phone configs only)
+configs/*.secret.json
