@@ -482,19 +482,16 @@ async def entrypoint(ctx: JobContext):
             from livekit.plugins import elevenlabs
             _el_voice_id = live_config.get("elevenlabs_voice_id", "SZfY4K69FwXus87eayHK")
             _el_model = live_config.get("elevenlabs_model", "eleven_turbo_v2_5")
-            agent_tts = elevenlabs.TTS(
-                model=_el_model,
-                voice_id=_el_voice_id,
-            )
+            # API key: config.json → ELEVEN_API_KEY env var (fallback handled by plugin)
+            _el_api_key = live_config.get("elevenlabs_api_key") or os.environ.get("ELEVEN_API_KEY") or os.environ.get("ELEVENLABS_API_KEY")
+            tts_kwargs = dict(model=_el_model, voice_id=_el_voice_id)
+            if _el_api_key:
+                tts_kwargs["api_key"] = _el_api_key
+            agent_tts = elevenlabs.TTS(**tts_kwargs)
             logger.info(f"[TTS] Using ElevenLabs {_el_model} — voice: {_el_voice_id}")
-        except ImportError:
-            logger.warning("[TTS] elevenlabs plugin not installed — falling back to Sarvam")
-            agent_tts = sarvam.TTS(
-                target_language_code=tts_language,
-                model="bulbul:v3",
-                speaker=tts_voice,
-                speech_sample_rate=24000,
-            )
+        except (ImportError, ValueError, Exception) as e:
+            logger.warning(f"[TTS] ElevenLabs unavailable ({e}) — falling back to OpenAI TTS")
+            agent_tts = openai.TTS(voice="nova")
     else:
         agent_tts = sarvam.TTS(
             target_language_code=tts_language,
