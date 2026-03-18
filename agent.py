@@ -480,7 +480,7 @@ async def entrypoint(ctx: JobContext):
     if tts_provider == "elevenlabs":
         try:
             from livekit.plugins import elevenlabs
-            _el_voice_id = live_config.get("elevenlabs_voice_id", "cgSgspJ2msm6clMCkdW9")
+            _el_voice_id = live_config.get("elevenlabs_voice_id", "SZfY4K69FwXus87eayHK")
             agent_tts = elevenlabs.TTS(
                 model="eleven_multilingual_v2",
                 voice_id=_el_voice_id,
