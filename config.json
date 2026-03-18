@@ -8,7 +8,7 @@
     "tts_provider": "elevenlabs",
     "stt_provider": "deepgram",
     "elevenlabs_voice_id": "21m00Tcm4TlvDq8ikWAM",
-    "elevenlabs_model": "eleven_turbo_v2_5",
+    "elevenlabs_model": "eleven_flash_v2_5",
     "elevenlabs_api_key": "",
     "livekit_url": "",
     "livekit_api_key": "",

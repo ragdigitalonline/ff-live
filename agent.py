@@ -481,9 +481,28 @@ async def entrypoint(ctx: JobContext):
         try:
             from livekit.plugins import elevenlabs
             _el_voice_id = live_config.get("elevenlabs_voice_id", "SZfY4K69FwXus87eayHK")
-            _el_model = live_config.get("elevenlabs_model", "eleven_turbo_v2_5")
+            _el_model = live_config.get("elevenlabs_model", "eleven_flash_v2_5")
             # API key: config.json → ELEVEN_API_KEY env var (fallback handled by plugin)
             _el_api_key = live_config.get("elevenlabs_api_key") or os.environ.get("ELEVEN_API_KEY") or os.environ.get("ELEVENLABS_API_KEY")
+            # Quick HTTP probe: verify API key + voice are valid before committing to WebSocket
+            if _el_api_key:
+                import aiohttp as _aiohttp
+                async def _probe_elevenlabs():
+                    url = f"https://api.elevenlabs.io/v1/text-to-speech/{_el_voice_id}"
+                    headers = {"xi-api-key": _el_api_key, "Content-Type": "application/json"}
+                    payload = {"text": "Hi", "model_id": _el_model}
+                    try:
+                        async with _aiohttp.ClientSession() as s:
+                            async with s.post(url, json=payload, headers=headers, timeout=_aiohttp.ClientTimeout(total=8)) as r:
+                                if r.status == 200:
+                                    logger.info(f"[TTS] ElevenLabs HTTP probe OK (status 200) — voice/key valid")
+                                else:
+                                    body = await r.text()
+                                    logger.warning(f"[TTS] ElevenLabs HTTP probe FAILED: status={r.status} body={body[:300]}")
+                    except Exception as probe_err:
+                        logger.warning(f"[TTS] ElevenLabs HTTP probe error: {probe_err}")
+                import asyncio as _asyncio
+                _asyncio.ensure_future(_probe_elevenlabs())
             tts_kwargs = dict(model=_el_model, voice_id=_el_voice_id)
             if _el_api_key:
                 tts_kwargs["api_key"] = _el_api_key
