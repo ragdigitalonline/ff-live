@@ -481,11 +481,12 @@ async def entrypoint(ctx: JobContext):
         try:
             from livekit.plugins import elevenlabs
             _el_voice_id = live_config.get("elevenlabs_voice_id", "SZfY4K69FwXus87eayHK")
+            _el_model = live_config.get("elevenlabs_model", "eleven_turbo_v2_5")
             agent_tts = elevenlabs.TTS(
-                model="eleven_multilingual_v2",
+                model=_el_model,
                 voice_id=_el_voice_id,
             )
-            logger.info(f"[TTS] Using ElevenLabs Multilingual v2 — voice: {_el_voice_id}")
+            logger.info(f"[TTS] Using ElevenLabs {_el_model} — voice: {_el_voice_id}")
         except ImportError:
             logger.warning("[TTS] elevenlabs plugin not installed — falling back to Sarvam")
             agent_tts = sarvam.TTS(
